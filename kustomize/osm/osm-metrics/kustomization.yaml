@@ -1,0 +1,5 @@
+namespace: osm-system
+commonLabels:
+  app: flagger
+resources:
+  - osm-metrics.yaml

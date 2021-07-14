@@ -1,0 +1,50 @@
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: osm-request-duration
+  namespace: osm-system
+spec:
+  provider:
+    type: prometheus
+    address: http://osm-prometheus.osm-system.svc:7070
+  query: |
+    histogram_quantile(
+      0.99,
+      sum(
+        rate(
+          osm_request_duration_ms{
+            destination_namespace="{{ namespace }}",
+            destination_name=~"{{ target }}"
+          }[{{ interval }}]
+        )
+      ) by (le)
+    )
+---
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: osm-request-success-rate
+  namespace: osm-system
+spec:
+  provider:
+    type: prometheus
+    address: http://osm-prometheus.osm-system.svc:7070
+  query: |
+    sum(
+        rate(
+            osm_request_total{
+              destination_namespace="{{ namespace }}",
+              destination_name="{{ target }}",
+              response_code!="404"
+            }[{{ interval }}]
+        )
+    )
+    /
+    sum(
+        rate(
+            osm_request_total{
+              destination_namespace="{{ namespace }}",
+              destination_name="{{ target }}"
+            }[{{ interval }}]
+        )
+    ) * 100
